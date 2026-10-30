@@ -1,0 +1,37 @@
+{% extends 'store/base.html' %}
+
+{% block titulo %}
+Registro - TechGear
+{% endblock %}
+
+{% block contenido %}
+
+    <h2>Crear una cuenta</h2>
+    {% if error %}
+        <p>{{ error }}</p>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div>
+            <label for="nombre">Nombre completo:</label>
+            <input type="text" id="nombre" name="nombre" required>
+        </div>
+
+        <div>
+            <label for="correo">Correo electrónico:</label>
+            <input type="email" id="correo" name="correo" required>
+        </div>
+
+        <div>
+            <label for="contrasena">Contraseña:</label>
+            <input type="password" id="contrasena" name="contrasena" required>
+        </div>
+
+        <button type="submit">Registrarme</button>
+    </form>
+
+    <p>¿Ya tienes una cuenta? <a href="/login/">Inicia sesión</a></p>
+
+{% endblock %}

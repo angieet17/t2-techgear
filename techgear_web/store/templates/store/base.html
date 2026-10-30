@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}TechGear{% endblock %}</title>
+</head>
+<body>
+
+    <header>
+        <h1>TechGear</h1>
+
+       
+        <nav>   
+        <a href="/">Catálogo</a>
+
+        {% if request.session.correo %}
+            <span>Bienvenido, {{ request.session.correo }}</span>
+
+            <form action="{% url 'logout' %}" method="POST" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit">Cerrar sesión</button>
+            </form>
+        {% else %}
+            <a href="/login/">Iniciar sesión</a>
+            <a href="/registro/">Registrarse</a>
+        {% endif %}
+        </nav>
+
+    </header>
+
+    <main>
+        {% block contenido %}
+        {% endblock %}
+    </main>
+
+    <footer>
+        <p>TechGear - Tienda de tecnología</p>
+    </footer>
+
+</body>
+</html>

@@ -7,3 +7,7 @@ class Usuario(BaseModel):
     nombre: str = Field(min_length=1)
     correo: str = Field(min_length=1)
     contrasena: str = Field(min_length=8)
+
+class Credenciales(BaseModel):
+    correo: str
+    contrasena: str

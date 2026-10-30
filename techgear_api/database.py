@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     mongodb_uri: str
-
+    jwt_secret_key: str
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8"
@@ -24,3 +24,5 @@ db = client["techgear"]
 
 productos_collection = db["productos"]
 pedidos_collection = db["pedidos"]
+#Usuario registrado
+usuarios_collection = db["usuarios"]

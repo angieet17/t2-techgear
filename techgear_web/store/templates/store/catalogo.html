@@ -1,0 +1,26 @@
+{% extends 'store/base.html' %}
+
+{% block titulo %}
+Catálogo - TechGear
+{% endblock %}
+
+{% block contenido %}
+
+    <h2>Catálogo de productos</h2>
+
+    <p>Bienvenido a nuestra tienda de tecnología.</p>
+
+    <section>
+        {% for producto in productos %}
+            <article>
+                <h3>{{ producto.nombre }}</h3>
+                <p>{{ producto.descripcion }}</p>
+                <p>Precio: ${{ producto.precio }}</p>
+                <p>Stock: {{ producto.stock }}</p>
+            </article>
+        {% empty %}
+            <p>No hay productos disponibles.</p>
+        {% endfor %}
+    </section>
+
+{% endblock %}
