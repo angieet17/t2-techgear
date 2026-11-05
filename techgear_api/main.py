@@ -1,5 +1,6 @@
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
+from auth import verificar_admin
 from bson import ObjectId
 
 from database import (
@@ -36,6 +37,10 @@ def registrar_usuario(usuario: Usuario):
 
     # Convertir los datos del usuario en un diccionario
     datos_usuario = usuario.model_dump()
+
+
+    # Asignar el rol predeterminado
+    datos_usuario["rol"] = "usuario"
 
     # Proteger la contraseña
     datos_usuario["contrasena"] = obtener_hash(
@@ -91,13 +96,15 @@ def iniciar_sesion(credenciales: Credenciales):
     # Crear el token JWT
     token = crear_token({
         "sub": str(usuario["_id"]),
-        "correo": usuario["correo"]
+        "correo": usuario["correo"],
+        "rol": usuario.get("rol", "usuario")
     })
 
     return {
         "mensaje": "Inicio de sesión exitoso",
         "access_token": token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "rol": usuario.get("rol", "usuario")
     }
 
 # Convierte el ObjectId de MongoDB en texto
@@ -125,7 +132,10 @@ def probar_conexion():
 # =========================
 
 @app.post("/productos", status_code=201, tags=["Productos"])
-def crear_producto(producto: Producto):
+def crear_producto(
+    producto: Producto,
+    usuario: dict = Depends(verificar_admin)
+    ):
     resultado = productos_collection.insert_one(
         producto.model_dump()
     )
@@ -165,7 +175,11 @@ def obtener_producto(producto_id: str):
 
 
 @app.put("/productos/{producto_id}", tags=["Productos"])
-def actualizar_producto(producto_id: str, producto: Producto):
+def actualizar_producto(
+    producto_id: str,
+    producto: Producto,
+    usuario: dict = Depends(verificar_admin)
+    ):
     if not ObjectId.is_valid(producto_id):
         raise HTTPException(
             status_code=400,
@@ -191,7 +205,10 @@ def actualizar_producto(producto_id: str, producto: Producto):
 
 
 @app.delete("/productos/{producto_id}", tags=["Productos"])
-def eliminar_producto(producto_id: str):
+def eliminar_producto(
+    producto_id: str,
+    usuario: dict = Depends(verificar_admin)
+    ):
     if not ObjectId.is_valid(producto_id):
         raise HTTPException(
             status_code=400,
