@@ -1,0 +1,164 @@
+
+{% extends 'store/base.html' %}
+
+{% block titulo %}Panel de administración | TechGear{% endblock %}
+
+{% block contenido %}
+
+<!-- Encabezado -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h1 class="fw-bold">Panel de administración</h1>
+        <p class="text-secondary mb-0">
+            Bienvenido, {{ request.session.correo }}
+        </p>
+    </div>
+
+    <span class="badge bg-primary fs-6">
+        Administrador
+    </span>
+</div>
+
+<!-- Estadística -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <h6 class="text-secondary">Productos registrados</h6>
+                <h2 class="fw-bold text-primary">{{ productos|length }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulario de registro -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-dark text-white py-3">
+        <h5 class="mb-0">Registrar nuevo producto</h5>
+    </div>
+
+    <div class="card-body">
+
+        {% if error %}
+            <div class="alert alert-danger">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" name="nombre"
+                           class="form-control" required>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Precio</label>
+                    <input type="number" name="precio"
+                           class="form-control"
+                           step="0.01" min="0.01" required>
+                </div>
+
+                <div class="col-md-8 mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea name="descripcion"
+                              class="form-control" rows="3"
+                              required></textarea>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Stock</label>
+                    <input type="number" name="stock"
+                           class="form-control"
+                           min="0" step="1" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Registrar producto
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de productos -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-dark text-white py-3">
+        <h5 class="mb-0">Administración de productos</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Stock</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for producto in productos %}
+                    <tr>
+                        <td class="fw-semibold">
+                            {{ producto.nombre }}
+                        </td>
+
+                        <td>{{ producto.descripcion }}</td>
+
+                        <td>
+                            ${{ producto.precio }}
+                        </td>
+
+                        <td>
+                            <span class="badge bg-info text-dark">
+                                {{ producto.stock }}
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="d-flex gap-2 flex-wrap">
+
+                                <a href="{% url 'editar_producto' producto.id %}"
+                                   class="btn btn-warning btn-sm">
+                                    Editar
+                                </a>
+
+                                <form method="POST"
+                                      action="{% url 'eliminar_producto' producto.id %}"
+                                      onsubmit="return confirm('¿Estás segura de eliminar este producto?')">
+
+                                    {% csrf_token %}
+
+                                    <button type="submit"
+                                            class="btn btn-danger btn-sm">
+                                        Eliminar
+                                    </button>
+                                </form>
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-secondary py-4">
+                            No hay productos registrados.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

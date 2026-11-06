@@ -1,0 +1,119 @@
+
+{% extends 'store/base.html' %}
+
+{% block titulo %}Editar producto | TechGear{% endblock %}
+
+{% block contenido %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+
+        <div class="mb-4">
+            <a href="{% url 'dashboard' %}"
+               class="btn btn-outline-secondary btn-sm">
+                ← Volver al dashboard
+            </a>
+        </div>
+
+        <div class="card shadow-sm border-0">
+
+            <div class="card-header bg-dark text-white p-3">
+                <h4 class="mb-0">Editar producto</h4>
+                <small class="text-info">
+                    Modifica la información del producto
+                </small>
+            </div>
+
+            <div class="card-body p-4">
+
+                {% if error %}
+                    <div class="alert alert-danger">
+                        {{ error }}
+                    </div>
+                {% endif %}
+
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Nombre del producto
+                        </label>
+                        <input
+                            type="text"
+                            name="nombre"
+                            class="form-control"
+                            value="{{ producto.nombre }}"
+                            required
+                        >
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Descripción
+                        </label>
+                        <textarea
+                            name="descripcion"
+                            class="form-control"
+                            rows="4"
+                            required>{{ producto.descripcion }}</textarea>
+                    </div>
+
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">
+                                Precio
+                            </label>
+                            <input
+                                type="number"
+                                name="precio"
+                                class="form-control"
+                                value="{{ producto.precio }}"
+                                step="0.01"
+                                min="0.01"
+                                required
+                            >
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">
+                                Stock
+                            </label>
+                            <input
+                                type="number"
+                                name="stock"
+                                class="form-control"
+                                value="{{ producto.stock }}"
+                                min="0"
+                                step="1"
+                                required
+                            >
+                        </div>
+
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-end gap-2">
+
+                        <a href="{% url 'dashboard' %}"
+                           class="btn btn-outline-secondary">
+                            Cancelar
+                        </a>
+
+                        <button type="submit" class="btn btn-primary">
+                            Guardar cambios
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
