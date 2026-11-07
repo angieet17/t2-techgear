@@ -1,19 +1,22 @@
 import os
 import requests
 
+from django.contrib import messages
 from django.shortcuts import render, redirect
+from django.views.decorators.http import require_POST
 
 API_URL = os.getenv(
     "TECHGEAR_API_URL",
     "https://t2-techgear.onrender.com"
 ).rstrip("/")
+TIMEOUT = 40
 
 # Create your views here.
 def catalogo(request):
     try:
         respuesta = requests.get(
             f"{API_URL}/productos",
-            timeout=10
+            timeout=30
         )
 
         respuesta.raise_for_status()
@@ -52,7 +55,7 @@ def login(request):
             respuesta = requests.post(
                 f"{API_URL}/usuarios/login",
                 json=datos,
-                timeout=10
+                timeout=TIMEOUT
             )
 
             if respuesta.status_code == 200:
@@ -106,7 +109,7 @@ def registro(request):
             respuesta = requests.post(
                 f"{API_URL}/usuarios/registro",
                 json=datos,
-                timeout=10
+                timeout=TIMEOUT
             )
 
             if respuesta.status_code == 201:
@@ -168,7 +171,7 @@ def dashboard(request):
                 f"{API_URL}/productos",
                 json=datos,
                 headers=headers,
-                timeout=10
+                timeout=TIMEOUT
             )
 
             respuesta.raise_for_status()
@@ -188,7 +191,7 @@ def dashboard(request):
     try:
         respuesta = requests.get(
             f"{API_URL}/productos",
-            timeout=10
+            timeout=TIMEOUT
         )
 
         respuesta.raise_for_status()
@@ -242,7 +245,7 @@ def editar_producto(request, producto_id):
                 f"{API_URL}/productos/{producto_id}",
                 json=datos,
                 headers=headers,
-                timeout=10
+                timeout=TIMEOUT
             )
 
             respuesta.raise_for_status()
@@ -265,7 +268,7 @@ def editar_producto(request, producto_id):
     try:
         respuesta = requests.get(
             f"{API_URL}/productos/{producto_id}",
-            timeout=10
+            timeout=TIMEOUT
         )
 
         respuesta.raise_for_status()
@@ -304,7 +307,7 @@ def eliminar_producto(request, producto_id):
         respuesta = requests.delete(
             f"{API_URL}/productos/{producto_id}",
             headers=headers,
-            timeout=10
+            timeout=TIMEOUT
         )
 
         if respuesta.status_code == 200:
@@ -314,3 +317,85 @@ def eliminar_producto(request, producto_id):
 
     except requests.RequestException:
         return redirect('dashboard')
+    
+@require_POST
+def agregar_producto(request, producto_id):
+
+    # Verificar que haya una sesión iniciada
+    if 'access_token' not in request.session:
+        return redirect('login')
+
+    # Los administradores no hacen pedidos
+    if request.session.get('rol') == 'admin':
+        return redirect('catalogo')
+
+    headers = {
+        'Authorization': f'Bearer {request.session["access_token"]}'
+    }
+
+    try:
+        respuesta = requests.post(
+            f"{API_URL}/pedidos/agregar/{producto_id}",
+            headers=headers,
+            timeout=TIMEOUT
+        )
+
+        if respuesta.status_code == 201:
+            nombre = respuesta.json().get('nombre', 'Producto')
+            messages.success(request, f'"{nombre}" se agregó a tus pedidos.')
+
+        elif respuesta.status_code == 401:
+            # El token expiró: cerrar sesión y pedir login de nuevo
+            request.session.flush()
+            return redirect('login')
+
+        else:
+            messages.error(
+                request,
+                respuesta.json().get('detail', 'No se pudo agregar el producto')
+            )
+
+    except (requests.RequestException, ValueError):
+        messages.error(request, 'No se pudo conectar con el servidor')
+
+    return redirect('catalogo')
+
+
+def mis_pedidos(request):
+
+    # Verificar que haya una sesión iniciada
+    if 'access_token' not in request.session:
+        return redirect('login')
+
+    headers = {
+        'Authorization': f'Bearer {request.session["access_token"]}'
+    }
+
+    pedidos = []
+    error = None
+
+    try:
+        respuesta = requests.get(
+            f"{API_URL}/pedidos/mis-pedidos",
+            headers=headers,
+            timeout=TIMEOUT
+        )
+
+        if respuesta.status_code == 401:
+            request.session.flush()
+            return redirect('login')
+
+        respuesta.raise_for_status()
+        pedidos = respuesta.json()
+
+    except requests.RequestException:
+        error = 'No se pudieron cargar tus pedidos'
+
+    return render(
+        request,
+        'store/mis_pedidos.html',
+        {
+            'pedidos': pedidos,
+            'error': error
+        }
+    )

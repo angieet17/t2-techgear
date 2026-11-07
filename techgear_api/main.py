@@ -1,6 +1,8 @@
 
 from fastapi import FastAPI, HTTPException, Depends
-from auth import verificar_admin
+from datetime import datetime, timezone
+
+from auth import verificar_admin, obtener_usuario_actual
 from bson import ObjectId
 
 from database import (
@@ -231,6 +233,75 @@ def eliminar_producto(
 # =========================
 # REGISTRO Y CONSULTA DE PEDIDOS
 # =========================
+# =========================
+# PEDIDOS DEL USUARIO
+# =========================
+@app.post("/pedidos/agregar/{producto_id}", status_code=201, tags=["Pedidos"])
+def agregar_producto_a_pedidos(
+    producto_id: str,
+    usuario: dict = Depends(obtener_usuario_actual)
+    ):
+    if not ObjectId.is_valid(producto_id):
+        raise HTTPException(
+            status_code=400,
+            detail="El identificador del producto no es válido",
+        )
+
+    # Descuenta 1 de stock SOLO si todavía hay stock.
+    # La operación es atómica: dos personas no pueden comprar la última unidad.
+    producto = productos_collection.find_one_and_update(
+        {"_id": ObjectId(producto_id), "stock": {"$gt": 0}},
+        {"$inc": {"stock": -1}},
+    )
+
+    if producto is None:
+        existe = productos_collection.find_one({"_id": ObjectId(producto_id)})
+        if existe is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Producto no encontrado",
+            )
+        raise HTTPException(
+            status_code=400,
+            detail="Producto agotado",
+        )
+
+    pedido = {
+        "usuario_id": str(usuario["_id"]),
+        "correo": usuario["correo"],
+        "producto_id": producto_id,
+        "nombre": producto["nombre"],
+        "precio": producto["precio"],
+        "cantidad": 1,
+        "productos": [producto["nombre"]],
+        "total": producto["precio"],
+        "estado": "pendiente",
+        "fecha": datetime.now(timezone.utc).isoformat(),
+    }
+
+    try:
+        resultado = pedidos_collection.insert_one(pedido)
+    except Exception:
+        # Si no se pudo guardar el pedido, devolvemos el stock
+        productos_collection.update_one(
+            {"_id": ObjectId(producto_id)},
+            {"$inc": {"stock": 1}},
+        )
+        raise HTTPException(
+            status_code=500,
+            detail="No se pudo registrar el pedido",
+        )
+
+    pedido["_id"] = resultado.inserted_id
+    return convertir_documento(pedido)
+
+
+@app.get("/pedidos/mis-pedidos", tags=["Pedidos"])
+def listar_mis_pedidos(usuario: dict = Depends(obtener_usuario_actual)):
+    pedidos = pedidos_collection.find(
+        {"usuario_id": str(usuario["_id"])}
+    ).sort("_id", -1)
+    return [convertir_documento(p) for p in pedidos]
 
 @app.post("/pedidos", status_code=201, tags=["Pedidos"])
 def crear_pedido(pedido: Pedido):
