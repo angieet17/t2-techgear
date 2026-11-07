@@ -32,7 +32,7 @@
                     </div>
                 {% endif %}
 
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     {% csrf_token %}
 
                     <div class="mb-3">
@@ -91,6 +91,27 @@
                             >
                         </div>
 
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Imagen (JPG, PNG o WEBP, máx. 1 MB)
+                        </label>
+
+                        {% if producto.tiene_imagen %}
+                            <div class="mb-2">
+                                <img src="{{ api_url }}/productos/{{ producto.id }}/imagen"
+                                     alt="{{ producto.nombre }}"
+                                     style="max-height: 140px;"
+                                     class="rounded border">
+                                <div class="form-text">
+                                    Imagen actual. Elige otra solo si quieres reemplazarla.
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <input type="file" name="imagen"
+                               class="form-control"
+                               accept="image/jpeg,image/png,image/webp">
                     </div>
 
                     <hr>

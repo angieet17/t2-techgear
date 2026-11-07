@@ -10,6 +10,27 @@ API_URL = os.getenv(
     "https://t2-techgear.onrender.com"
 ).rstrip("/")
 TIMEOUT = 40
+MAX_IMAGEN = 1024 * 1024  # 1 MB
+
+def subir_imagen(producto_id, archivo, headers):
+    """Envía la imagen a la API. Devuelve None si salió bien,
+    o un texto con el error si algo falló."""
+    if archivo.size > MAX_IMAGEN:
+        return 'La imagen pesa más de 1 MB'
+
+    try:
+        respuesta = requests.post(
+            f"{API_URL}/productos/{producto_id}/imagen",
+            files={'imagen': (archivo.name, archivo.read(), archivo.content_type)},
+            headers=headers,
+            timeout=TIMEOUT
+        )
+        if respuesta.status_code == 200:
+            return None
+        return respuesta.json().get('detail', 'No se pudo subir la imagen')
+
+    except (requests.RequestException, ValueError):
+        return 'No se pudo subir la imagen'
 
 # Create your views here.
 def catalogo(request):
@@ -33,7 +54,8 @@ def catalogo(request):
         'store/catalogo.html',
         {
             'productos': productos,
-            'error': error
+            'error': error,
+            'api_url': API_URL
         }
     )
 
@@ -175,6 +197,15 @@ def dashboard(request):
             )
 
             respuesta.raise_for_status()
+            # Si el admin eligió una imagen, subirla al producto nuevo
+            archivo = request.FILES.get('imagen')
+            if archivo:
+                fallo = subir_imagen(respuesta.json()['id'], archivo, headers)
+                if fallo:
+                    messages.error(
+                        request,
+                        f'Producto creado, pero la imagen falló: {fallo}'
+                    )
 
             return redirect('dashboard')
 
@@ -206,7 +237,8 @@ def dashboard(request):
         'store/dashboard.html',
         {
             'productos': productos,
-            'error': error
+            'error': error,
+            'api_url': API_URL
         }
     )
 
@@ -249,6 +281,16 @@ def editar_producto(request, producto_id):
             )
 
             respuesta.raise_for_status()
+            
+            # Si el admin eligió una imagen nueva, reemplazar la anterior
+            archivo = request.FILES.get('imagen')
+            if archivo:
+                fallo = subir_imagen(producto_id, archivo, headers)
+                if fallo:
+                    messages.error(
+                        request,
+                        f'Producto actualizado, pero la imagen falló: {fallo}'
+                    )
 
             return redirect('dashboard')
 
@@ -260,7 +302,8 @@ def editar_producto(request, producto_id):
                 'store/editar_producto.html',
                 {
                     'producto': datos,
-                    'error': error
+                    'error': error,
+                    'api_url': API_URL
                 }
             )
 
@@ -281,7 +324,8 @@ def editar_producto(request, producto_id):
         request,
         'store/editar_producto.html',
         {
-            'producto': producto
+            'producto': producto,
+            'api_url': API_URL
         }
     )
 

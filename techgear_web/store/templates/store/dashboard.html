@@ -45,7 +45,7 @@
             </div>
         {% endif %}
 
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
 
             <div class="row">
@@ -75,6 +75,12 @@
                            class="form-control"
                            min="0" step="1" required>
                 </div>
+                <div class="col-12 mb-3">
+                    <label class="form-label">Imagen (JPG, PNG o WEBP, máx. 1 MB)</label>
+                    <input type="file" name="imagen"
+                           class="form-control"
+                           accept="image/jpeg,image/png,image/webp">
+                </div>
             </div>
 
             <button type="submit" class="btn btn-primary">
@@ -96,6 +102,7 @@
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
+                        <th>Imagen</th>
                         <th>Nombre</th>
                         <th>Descripción</th>
                         <th>Precio</th>
@@ -107,6 +114,16 @@
                 <tbody>
                     {% for producto in productos %}
                     <tr>
+                        <td>
+                            {% if producto.tiene_imagen %}
+                                <img src="{{ api_url }}/productos/{{ producto.id }}/imagen"
+                                     alt="{{ producto.nombre }}"
+                                     style="width: 56px; height: 56px; object-fit: cover;"
+                                     class="rounded">
+                            {% else %}
+                                <span class="text-secondary small">Sin imagen</span>
+                            {% endif %}
+                        </td>
                         <td class="fw-semibold">
                             {{ producto.nombre }}
                         </td>
@@ -149,7 +166,7 @@
 
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center text-secondary py-4">
+                        <td colspan="6" class="text-center text-secondary py-4">
                             No hay productos registrados.
                         </td>
                     </tr>

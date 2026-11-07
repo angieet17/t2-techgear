@@ -1,9 +1,9 @@
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Response
 from datetime import datetime, timezone
 
 from auth import verificar_admin, obtener_usuario_actual
-from bson import ObjectId
+from bson import ObjectId, Binary
 
 from database import (
     client,
@@ -151,7 +151,7 @@ def crear_producto(
 
 @app.get("/productos", tags=["Productos"])
 def listar_productos():
-    productos = productos_collection.find()
+    productos = productos_collection.find({}, {"imagen": 0})
     return [convertir_documento(p) for p in productos]
 
 
@@ -164,7 +164,8 @@ def obtener_producto(producto_id: str):
         )
 
     producto = productos_collection.find_one(
-        {"_id": ObjectId(producto_id)}
+        {"_id": ObjectId(producto_id)},
+        {"imagen": 0}
     )
 
     if producto is None:
@@ -200,7 +201,8 @@ def actualizar_producto(
         )
 
     producto_actualizado = productos_collection.find_one(
-        {"_id": ObjectId(producto_id)}
+        {"_id": ObjectId(producto_id)},
+        {"imagen": 0}
     )
 
     return convertir_documento(producto_actualizado)
@@ -233,6 +235,83 @@ def eliminar_producto(
 # =========================
 # REGISTRO Y CONSULTA DE PEDIDOS
 # =========================
+# =========================
+# IMAGEN DE LOS PRODUCTOS
+# =========================
+
+TIPOS_IMAGEN = ["image/jpeg", "image/png", "image/webp"]
+MAX_IMAGEN_BYTES = 1024 * 1024  # 1 MB
+
+
+@app.post("/productos/{producto_id}/imagen", tags=["Productos"])
+async def subir_imagen_producto(
+    producto_id: str,
+    imagen: UploadFile = File(...),
+    usuario: dict = Depends(verificar_admin)
+    ):
+    if not ObjectId.is_valid(producto_id):
+        raise HTTPException(
+            status_code=400,
+            detail="El identificador del producto no es válido",
+        )
+
+    if imagen.content_type not in TIPOS_IMAGEN:
+        raise HTTPException(
+            status_code=400,
+            detail="Formato no permitido. Usa JPG, PNG o WEBP",
+        )
+
+    # Leemos un byte de más para detectar si se pasa del límite
+    contenido = await imagen.read(MAX_IMAGEN_BYTES + 1)
+
+    if len(contenido) > MAX_IMAGEN_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail="La imagen pesa más de 1 MB",
+        )
+
+    resultado = productos_collection.update_one(
+        {"_id": ObjectId(producto_id)},
+        {"$set": {
+            "imagen": Binary(contenido),
+            "imagen_tipo": imagen.content_type,
+            "tiene_imagen": True,
+        }},
+    )
+
+    if resultado.matched_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Producto no encontrado",
+        )
+
+    return {"mensaje": "Imagen guardada correctamente"}
+
+
+@app.get("/productos/{producto_id}/imagen", tags=["Productos"])
+def obtener_imagen_producto(producto_id: str):
+    if not ObjectId.is_valid(producto_id):
+        raise HTTPException(
+            status_code=400,
+            detail="El identificador del producto no es válido",
+        )
+
+    producto = productos_collection.find_one(
+        {"_id": ObjectId(producto_id)},
+        {"imagen": 1, "imagen_tipo": 1}
+    )
+
+    if producto is None or "imagen" not in producto:
+        raise HTTPException(
+            status_code=404,
+            detail="El producto no tiene imagen",
+        )
+
+    return Response(
+        content=bytes(producto["imagen"]),
+        media_type=producto.get("imagen_tipo", "image/jpeg"),
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
 # =========================
 # PEDIDOS DEL USUARIO
 # =========================

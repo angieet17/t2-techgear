@@ -24,6 +24,17 @@ Catálogo - TechGear
             <div class="col-md-6 col-lg-4">
 
                 <div class="card h-100 shadow-sm border-0">
+                    {% if producto.tiene_imagen %}
+                        <img src="{{ api_url }}/productos/{{ producto.id }}/imagen"
+                             class="card-img-top"
+                             style="height: 220px; object-fit: cover;"
+                             alt="{{ producto.nombre }}">
+                    {% else %}
+                        <div class="bg-secondary bg-opacity-10 text-secondary d-flex align-items-center justify-content-center"
+                             style="height: 220px;">
+                            Sin imagen
+                        </div>
+                    {% endif %}
 
                     <div class="card-body p-4">
 
