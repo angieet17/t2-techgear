@@ -1,8 +1,12 @@
+import os
 import requests
 
 from django.shortcuts import render, redirect
 
-API_URL = "http://127.0.0.1:8001"
+API_URL = os.getenv(
+    "TECHGEAR_API_URL",
+    "https://t2-techgear.onrender.com"
+).rstrip("/")
 
 # Create your views here.
 def catalogo(request):
@@ -126,82 +130,6 @@ def registro(request):
 def cerrar_sesion(request):
     request.session.flush()
     return redirect('catalogo')
-
-
-def dashboard(request):
-
-    # Verificar que haya una sesión iniciada
-    if 'access_token' not in request.session:
-        return redirect('login')
-
-    # Verificar que el usuario sea administrador
-    if request.session.get('rol') != 'admin':
-        return redirect('catalogo')
-
-    # Obtener el token guardado en la sesión
-    token = request.session['access_token']
-
-    # Preparar los encabezados de autenticación
-    headers = {
-        'Authorization': f'Bearer {token}'
-    }
-
-    error = None
-
-    # Comprobar si se envió el formulario
-    if request.method == 'POST':
-
-        # Obtener los datos del formulario
-        datos = {
-            'nombre': request.POST.get('nombre'),
-            'descripcion': request.POST.get('descripcion'),
-            'precio': request.POST.get('precio'),
-            'stock': request.POST.get('stock')
-        }
-
-        try:
-            respuesta = requests.post(
-                f"{API_URL}/productos",
-                json=datos,
-                headers=headers,
-                timeout=10
-            )
-
-            respuesta.raise_for_status()
-
-            return redirect('dashboard')
-
-        except requests.RequestException as e:
-            try:
-                error = respuesta.json().get(
-                    'detail',
-                    'No se pudo registrar el producto'
-                )
-            except (ValueError, UnboundLocalError):
-                error = 'No se pudo conectar con FastAPI'
-
-    # Consultar los productos
-    try:
-        respuesta = requests.get(
-            f"{API_URL}/productos",
-            timeout=10
-        )
-
-        respuesta.raise_for_status()
-        productos = respuesta.json()
-
-    except requests.RequestException:
-        productos = []
-        error = error or "No se pudieron cargar los productos"
-
-    return render(
-        request,
-        'store/dashboard.html',
-        {
-            'productos': productos,
-            'error': error
-        }
-    )
 
 
 def dashboard(request):

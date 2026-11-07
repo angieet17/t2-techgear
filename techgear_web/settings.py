@@ -29,10 +29,17 @@ if not SECRET_KEY:
     raise ValueError("No se encontró DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.vercel.app',
+]
+#Protección CSRF
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.vercel.app',
+]
 
 # Application definition
 

@@ -6,21 +6,67 @@ Catálogo - TechGear
 
 {% block contenido %}
 
-    <h2>Catálogo de productos</h2>
+<div class="container py-5">
 
-    <p>Bienvenido a nuestra tienda de tecnología.</p>
+    <!-- Encabezado del catálogo -->
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">Catálogo de productos</h2>
+        <p class="text-secondary">
+            Encuentra la tecnología que necesitas.
+        </p>
+    </div>
 
-    <section>
+    <!-- Productos -->
+    <div class="row g-4">
+
         {% for producto in productos %}
-            <article>
-                <h3>{{ producto.nombre }}</h3>
-                <p>{{ producto.descripcion }}</p>
-                <p>Precio: ${{ producto.precio }}</p>
-                <p>Stock: {{ producto.stock }}</p>
-            </article>
+
+            <div class="col-md-6 col-lg-4">
+
+                <div class="card h-100 shadow-sm border-0">
+
+                    <div class="card-body p-4">
+
+                        <h5 class="card-title fw-bold">
+                            {{ producto.nombre }}
+                        </h5>
+
+                        <p class="card-text text-secondary">
+                            {{ producto.descripcion }}
+                        </p>
+
+                        <h4 class="fw-bold text-primary">
+                            ${{ producto.precio }}
+                        </h4>
+
+                        <span class="badge bg-light text-dark border">
+                            Stock disponible: {{ producto.stock }}
+                        </span>
+
+                    </div>
+
+                    <div class="card-footer bg-white border-0 p-4 pt-0">
+                        <button class="btn btn-primary w-100" disabled>
+                            Ver producto
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+
         {% empty %}
-            <p>No hay productos disponibles.</p>
+
+            <div class="col-12 text-center">
+                <div class="alert alert-info">
+                    No hay productos disponibles.
+                </div>
+            </div>
+
         {% endfor %}
-    </section>
+
+    </div>
+
+</div>
 
 {% endblock %}
