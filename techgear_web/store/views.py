@@ -32,6 +32,38 @@ def subir_imagen(producto_id, archivo, headers):
     except (requests.RequestException, ValueError):
         return 'No se pudo subir la imagen'
 
+def traducir_errores(detalle):
+    """Convierte la respuesta de error de la API en mensajes por campo.
+    Devuelve (errores_por_campo, mensaje_general)."""
+    errores = {}
+    general = None
+
+    # Errores de validación (pydantic): llegan como una lista
+    if isinstance(detalle, list):
+        for e in detalle:
+            loc = e.get('loc') or []
+            campo = loc[-1] if loc else None
+            tipo = e.get('type', '')
+
+            if campo == 'contrasena' and tipo == 'string_too_short':
+                errores['contrasena'] = 'La contraseña debe tener mínimo 8 caracteres.'
+            elif campo in ('nombre', 'correo') and tipo == 'string_too_short':
+                errores[campo] = 'Este campo es obligatorio.'
+            elif campo in ('nombre', 'correo', 'contrasena'):
+                errores[campo] = 'Revisa este campo.'
+
+        if not errores:
+            general = 'Revisa los datos e inténtalo de nuevo.'
+
+    # Errores de texto (por ejemplo, "El correo ya está registrado")
+    elif isinstance(detalle, str):
+        if 'correo' in detalle.lower():
+            errores['correo'] = detalle
+        else:
+            general = detalle
+
+    return errores, general
+
 # Create your views here.
 def catalogo(request):
     try:
@@ -135,20 +167,35 @@ def registro(request):
             )
 
             if respuesta.status_code == 201:
+                messages.success(
+                    request,
+                    '¡Registro exitoso! Ya puedes iniciar sesión.'
+                )
                 return redirect('login')
 
-            mensaje = respuesta.json().get(
-                'detail',
-                'No fue posible registrar el usuario'
-            )
+            try:
+                detalle = respuesta.json().get('detail')
+            except ValueError:
+                detalle = None
+
+            errores, mensaje = traducir_errores(detalle)
+
+            if not errores and not mensaje:
+                mensaje = 'No fue posible registrar el usuario'
 
         except requests.RequestException:
+            errores = {}
             mensaje = 'No se pudo conectar con el servidor'
 
         return render(
             request,
             'store/registro.html',
-            {'error': mensaje}
+            {
+                'error': mensaje,
+                'errores': errores,
+                # Se conservan nombre y correo; la contraseña nunca
+                'valores': {'nombre': nombre, 'correo': correo}
+            }
         )
     return render(request, 'store/registro.html')
 

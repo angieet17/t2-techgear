@@ -50,6 +50,9 @@ Registro - TechGear
                                 placeholder="Ingresa tu nombre"
                                 required
                             >
+                            {% if errores.nombre %}
+                                <div class="invalid-feedback d-block">{{ errores.nombre }}</div>
+                            {% endif %}
 
                         </div>
 
@@ -65,8 +68,12 @@ Registro - TechGear
                                 id="correo"
                                 name="correo"
                                 placeholder="ejemplo@correo.com"
+                                value="{{ valores.correo|default:'' }}"
                                 required
                             >
+                            {% if errores.correo %}
+                                <div class="invalid-feedback d-block">{{ errores.correo }}</div>
+                            {% endif %}
 
                         </div>
 
@@ -82,8 +89,14 @@ Registro - TechGear
                                 id="contrasena"
                                 name="contrasena"
                                 placeholder="Crea una contraseña"
+                                minlength="8"
                                 required
                             >
+                            {% if errores.contrasena %}
+                                <div class="invalid-feedback">{{ errores.contrasena }}</div>
+                            {% else %}
+                                <div class="form-text">Mínimo 8 caracteres.</div>
+                            {% endif %}
 
                         </div>
 
@@ -111,5 +124,20 @@ Registro - TechGear
     </div>
 
 </div>
+<script>
+    // Mensaje en español junto al campo de contraseña
+    const campoContrasena = document.getElementById('contrasena');
 
+    campoContrasena.addEventListener('invalid', function () {
+        if (campoContrasena.validity.tooShort) {
+            campoContrasena.setCustomValidity(
+                'La contraseña debe tener mínimo 8 caracteres.'
+            );
+        }
+    });
+
+    campoContrasena.addEventListener('input', function () {
+        campoContrasena.setCustomValidity('');
+    });
+</script>
 {% endblock %}
