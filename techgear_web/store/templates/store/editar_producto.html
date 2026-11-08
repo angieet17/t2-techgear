@@ -18,7 +18,7 @@
         <div class="card shadow-sm border-0">
 
             <div class="card-header bg-dark text-white p-3">
-                <h4 class="mb-0">Editar producto</h4>
+                <h1 class="mb-0 fs-4">Editar producto</h1>
                 <small class="text-info">
                     Modifica la información del producto
                 </small>
@@ -99,7 +99,7 @@
 
                         {% if producto.tiene_imagen %}
                             <div class="mb-2">
-                                <img src="{{ api_url }}/productos/{{ producto.id }}/imagen"
+                                <img src="{{ api_url }}/productos/{{ producto.id }}/imagen?v={{ producto.imagen_version|default:0 }}"
                                      alt="{{ producto.nombre }}"
                                      style="max-height: 140px;"
                                      class="rounded border">

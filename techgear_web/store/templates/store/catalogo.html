@@ -10,8 +10,8 @@ Catálogo - TechGear
 
     <!-- Encabezado del catálogo -->
     <div class="text-center mb-5">
-        <h2 class="fw-bold">Catálogo de productos</h2>
-        <p class="text-secondary">
+        <h1 class="fw-bold">Catálogo de productos</h1>
+        <p class="text-body-secondary">
             Encuentra la tecnología que necesitas.
         </p>
     </div>
@@ -27,10 +27,13 @@ Catálogo - TechGear
                     {% if producto.tiene_imagen %}
                         <img src="{{ api_url }}/productos/{{ producto.id }}/imagen"
                              class="card-img-top"
+                             width="400" height="220"
                              style="height: 220px; object-fit: cover;"
+                             decoding="async"
+                             {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}
                              alt="{{ producto.nombre }}">
                     {% else %}
-                        <div class="bg-secondary bg-opacity-10 text-secondary d-flex align-items-center justify-content-center"
+                        <div class="bg-body-secondary bg-opacity-10 text-body-secondary d-flex align-items-center justify-content-center"
                              style="height: 220px;">
                             Sin imagen
                         </div>
@@ -38,17 +41,17 @@ Catálogo - TechGear
 
                     <div class="card-body p-4">
 
-                        <h5 class="card-title fw-bold">
+                        <h2 class="card-title fs-5 fw-bold">
                             {{ producto.nombre }}
-                        </h5>
+                        </h2>
 
-                        <p class="card-text text-secondary">
+                        <p class="card-text text-body-secondary">
                             {{ producto.descripcion }}
                         </p>
 
-                        <h4 class="fw-bold text-primary">
+                        <p class="ffs-4 w-bold text-primary">
                             ${{ producto.precio }}
-                        </h4>
+                        </p>
 
                         <span class="badge bg-light text-dark border">
                             Stock disponible: {{ producto.stock }}

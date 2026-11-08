@@ -1,6 +1,10 @@
 
 from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Response
+import time
 from datetime import datetime, timezone
+from io import BytesIO
+
+from PIL import Image, ImageOps
 
 from auth import verificar_admin, obtener_usuario_actual
 from bson import ObjectId, Binary
@@ -241,6 +245,24 @@ def eliminar_producto(
 
 TIPOS_IMAGEN = ["image/jpeg", "image/png", "image/webp"]
 MAX_IMAGEN_BYTES = 1024 * 1024  # 1 MB
+LADO_MAXIMO = 800               # píxeles
+
+
+def optimizar_imagen(contenido: bytes) -> bytes:
+    """Reduce la imagen a un máximo de 800 px y la convierte a WEBP.
+    Lanza una excepción si el archivo no es una imagen real."""
+    imagen = Image.open(BytesIO(contenido))
+    imagen = ImageOps.exif_transpose(imagen)
+    imagen.thumbnail((LADO_MAXIMO, LADO_MAXIMO))
+
+    if imagen.mode in ("RGBA", "LA", "P"):
+        imagen = imagen.convert("RGBA")
+    else:
+        imagen = imagen.convert("RGB")
+
+    salida = BytesIO()
+    imagen.save(salida, "WEBP", quality=80)
+    return salida.getvalue()
 
 
 @app.post("/productos/{producto_id}/imagen", tags=["Productos"])
@@ -270,12 +292,22 @@ async def subir_imagen_producto(
             detail="La imagen pesa más de 1 MB",
         )
 
+    # Reducimos y convertimos a WEBP; también valida que sea una imagen real
+    try:
+        contenido = optimizar_imagen(contenido)
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="El archivo no es una imagen válida",
+        )
+
     resultado = productos_collection.update_one(
         {"_id": ObjectId(producto_id)},
         {"$set": {
             "imagen": Binary(contenido),
             "imagen_tipo": imagen.content_type,
             "tiene_imagen": True,
+            "imagen_version": int(time.time()),
         }},
     )
 
@@ -310,7 +342,7 @@ def obtener_imagen_producto(producto_id: str):
     return Response(
         content=bytes(producto["imagen"]),
         media_type=producto.get("imagen_tipo", "image/jpeg"),
-        headers={"Cache-Control": "public, max-age=3600"},
+        headers={"Cache-Control": "public, max-age=3600, immutable"},
     )
 # =========================
 # PEDIDOS DEL USUARIO
