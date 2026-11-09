@@ -2,7 +2,7 @@
 
 Tienda de tecnología en línea desarrollada como proyecto académico. Permite consultar un catálogo de productos con imágenes, registrarse, iniciar sesión, agregar productos a los pedidos del usuario y administrar el inventario desde un panel de administración.
 
-- **Aplicación web:** https://TU-PROYECTO.vercel.app
+- **Aplicación web:** https://t2-techgear-77y3.vercel.app/
 - **API (documentación Swagger):** https://t2-techgear.onrender.com/docs
 
 > La API está en el plan gratuito de Render: si lleva un rato sin uso, la primera petición puede tardar entre 30 y 60 segundos en responder.
